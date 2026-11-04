@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Winh Ditado
+Comment=Ditado com Whisper local (Win+H)
+Exec=WinhDitado
+Icon=winh-ditado
+Terminal=false
+Categories=Utility;Accessibility;
+X-AppImage-Version=1.0.0
