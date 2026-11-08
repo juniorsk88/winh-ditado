@@ -116,7 +116,7 @@ def main(argv: list[str]) -> int:
         result: dict[str, bool] = {}
 
         def worker(status):
-            result["ok"] = engine.prepare(status)
+            result["ok"] = engine.prepare(lambda message, *_rest: status(message))
             return result["ok"]
 
         ui.progress_window(
@@ -152,4 +152,5 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv[1:]))
+
 

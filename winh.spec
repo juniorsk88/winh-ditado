@@ -1,7 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 """Receita do PyInstaller para o Winh Ditado (Windows e Linux)."""
 
+import os
+import sys
+
 from PyInstaller.utils.hooks import collect_all
+
+ICON = "packaging/winh-ditado.ico" if (sys.platform == "win32" and os.path.exists("packaging/winh-ditado.ico")) else None
 
 datas, binaries, hiddenimports = [], [], []
 for package in (
@@ -41,6 +46,7 @@ exe = EXE(
     a.datas,
     [],
     name="WinhDitado",
+    icon=ICON,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -49,3 +55,4 @@ exe = EXE(
     disable_windowed_traceback=False,
     onefile=True,
 )
+
