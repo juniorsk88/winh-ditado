@@ -25,6 +25,7 @@ class App:
         self.action = threading.Lock()
         self.engine = engine or WhisperEngine(cfg, log)
         self.capture: audio.Capture | None = None
+        self.last_text_at = 0.0
         self.indicator = (
             ui.Indicator(
                 on_pause=self._wrap(self.pause),
@@ -169,6 +170,7 @@ class App:
             return
         with self.lock:
             self.state = self.RECORDING
+        self.last_text_at = time.time()
         self.indicator.recording(0.0)
         threading.Thread(target=self._watch, daemon=True).start()
 
@@ -184,6 +186,7 @@ class App:
         pedaco = text.strip()
         if pedaco and not pedaco.endswith((" ", "\n")):
             pedaco += " "
+        self.last_text_at = time.time()
         self.log.info("trecho %d -> %r (em %s)", getattr(self.capture, "segment_count", 0) + 1, pedaco[:90], platform.foreground_title())
         platform.type_text(pedaco, int(self.cfg.get("type_delay_ms") or 10))
         return pedaco
@@ -198,6 +201,10 @@ class App:
                     return
             elapsed = time.time() - started
             self.indicator.recording(elapsed)
+            if self.last_text_at and (time.time() - self.last_text_at) > 30:
+                self.log.info("30s sem reconhecer nada: encerrando")
+                self._wrap(self.finish)()
+                return
             if self.capture is not None and self.capture.auto_stopped:
                 self.log.info("encerrado por silêncio")
                 self._wrap(self.finish)()
@@ -249,5 +256,6 @@ class App:
         with self.lock:
             self.state = self.IDLE
         self.log.info("ditado encerrado")
+
 
 
