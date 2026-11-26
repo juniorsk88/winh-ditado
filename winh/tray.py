@@ -8,6 +8,16 @@ import threading
 def _image():
     from PIL import Image, ImageDraw
 
+    try:
+        from . import config
+
+        for name in ("winh-ditado.ico", "winh-ditado.png"):
+            path = config.app_root() / name
+            if path.exists():
+                return Image.open(path).convert("RGBA").resize((64, 64), Image.LANCZOS)
+    except Exception:
+        pass
+
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw.ellipse((2, 2, 61, 61), fill=(179, 38, 30, 255))
@@ -57,6 +67,7 @@ class Tray:
                 self.icon.stop()
         except Exception:
             pass
+
 
 
 

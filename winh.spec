@@ -26,6 +26,11 @@ for package in (
     binaries += package_binaries
     hiddenimports += package_hidden
 
+if os.path.exists("packaging/winh-ditado.ico"):
+    datas.append(("packaging/winh-ditado.ico", "."))
+if os.path.exists("packaging/winh-ditado.png"):
+    datas.append(("packaging/winh-ditado.png", "."))
+
 a = Analysis(
     ["run_winh.py"],
     pathex=["."],
@@ -55,4 +60,5 @@ exe = EXE(
     disable_windowed_traceback=False,
     onefile=True,
 )
+
 
