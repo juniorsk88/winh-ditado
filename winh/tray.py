@@ -19,8 +19,10 @@ def _image():
 
 
 class Tray:
-    def __init__(self, on_settings, on_toggle, on_quit) -> None:
+    def __init__(self, on_settings, on_toggle, on_quit, on_game=None, on_game_off=None) -> None:
         self.on_settings = on_settings
+        self.on_game = on_game
+        self.on_game_off = on_game_off
         self.on_toggle = on_toggle
         self.on_quit = on_quit
         self.icon = None
@@ -34,6 +36,8 @@ class Tray:
         menu = pystray.Menu(
             pystray.MenuItem("Configurações…", lambda: self._call(self.on_settings), default=True),
             pystray.MenuItem("Pausar / retomar", lambda: self._call(self.on_toggle)),
+            pystray.MenuItem("Modo jogo (liberar memória)", lambda: self._call(self.on_game)),
+            pystray.MenuItem("Sair do modo jogo", lambda: self._call(self.on_game_off)),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Sair", lambda: self._call(self.on_quit)),
         )
@@ -53,3 +57,6 @@ class Tray:
                 self.icon.stop()
         except Exception:
             pass
+
+
+

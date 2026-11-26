@@ -74,6 +74,8 @@ class App:
                 on_settings=self._open_settings,
                 on_toggle=self._wrap(self.toggle),
                 on_quit=self._quit,
+                on_game=self._game_on,
+                on_game_off=self._game_off,
             )
             if not self.tray.start():
                 self.log.warning("ícone da bandeja indisponível")
@@ -90,6 +92,18 @@ class App:
             subprocess.Popen([sys.executable, "--settings"])
         except Exception:
             self.log.exception("não consegui abrir as configurações")
+
+    def _game_on(self) -> None:
+        from . import gamemode
+
+        gamemode.enter()
+        self.log.info("modo jogo: modelos fechados")
+
+    def _game_off(self) -> None:
+        from . import gamemode
+
+        gamemode.leave()
+        self.log.info("modo jogo desligado: modelos subindo")
 
     def _quit(self) -> None:
         self.log.info("saindo pelo menu da bandeja")
@@ -256,6 +270,7 @@ class App:
         with self.lock:
             self.state = self.IDLE
         self.log.info("ditado encerrado")
+
 
 
 
