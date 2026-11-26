@@ -1,4 +1,4 @@
-"""Janela de configuracoes: modo, modelo, idioma, microfone e comportamento."""
+"""Configuracoes do ditado: segue o tema do Windows (claro ou escuro)."""
 
 from __future__ import annotations
 
@@ -8,75 +8,115 @@ from tkinter import ttk
 from . import config
 
 MODELS = [
-    ("tiny", "tiny — 39 MB, o mais rápido, qualidade baixa"),
-    ("base", "base — 74 MB, rápido, qualidade razoável"),
-    ("small", "small — 244 MB, equilíbrio para CPU"),
-    ("medium", "medium — 769 MB, boa qualidade, CPU pesada"),
-    ("large-v3", "large-v3 — 1,5 GB, máxima qualidade (GPU)"),
-    ("large-v3-turbo", "large-v3-turbo — 1,5 GB, quase large-v3 e bem mais rápido (GPU)"),
-    ("distil-large-v3", "distil-large-v3 — 756 MB, rápido e bom em inglês"),
+    ("tiny", "tiny — 39 MB · o mais rápido, qualidade baixa"),
+    ("base", "base — 74 MB · rápido, qualidade razoável"),
+    ("small", "small — 244 MB · equilíbrio para CPU"),
+    ("medium", "medium — 769 MB · boa qualidade, CPU pesada"),
+    ("large-v3", "large-v3 — 1,5 GB · máxima qualidade (GPU)"),
+    ("large-v3-turbo", "large-v3-turbo — 1,5 GB · quase large-v3 e bem mais rápido (GPU)"),
+    ("distil-large-v3", "distil-large-v3 — 756 MB · rápido e bom em inglês"),
 ]
 
-DEVICES = [
-    ("cuda", "GPU (placa NVIDIA)"),
-    ("cpu", "CPU (processador)"),
-]
+DEVICES = [("cuda", "GPU — placa NVIDIA"), ("cpu", "CPU — processador")]
 
 COMPUTE = [
-    ("float16", "float16 (GPU, padrão)"),
-    ("int8_float16", "int8_float16 (GPU com menos memória)"),
-    ("int8", "int8 (CPU, padrão)"),
-    ("float32", "float32 (CPU, mais lento e mais preciso)"),
+    ("float16", "float16 — GPU, padrão"),
+    ("int8_float16", "int8_float16 — GPU com menos memória"),
+    ("int8", "int8 — CPU, padrão"),
+    ("float32", "float32 — CPU, mais lento e preciso"),
 ]
+
+LANGUAGES = [("pt", "Português"), ("en", "Inglês"), ("es", "Espanhol"), ("auto", "Detectar")]
+
+
+def is_dark() -> bool:
+    """Le a preferencia de tema do Windows (AppsUseLightTheme)."""
+    try:
+        import winreg
+
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+        )
+        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+        return int(value) == 0
+    except Exception:
+        return False
+
+
+def palette() -> dict:
+    dark = is_dark()
+    return {
+        "dark": dark,
+        "bg": "#1F1F1F" if dark else "#F3F4F6",
+        "card": "#2B2B2B" if dark else "#FFFFFF",
+        "fg": "#F5F5F5" if dark else "#1A1A1A",
+        "muted": "#A0A0A0" if dark else "#5F6368",
+        "border": "#3C3C3C" if dark else "#E0E0E0",
+        "accent": "#B3261E",
+        "action": "#1F4E79",
+    }
 
 
 def open_settings(on_saved=None) -> None:
     cfg = config.load()
+    color = palette()
 
     root = tk.Tk()
     root.title("Winh Ditado — Configurações")
-    root.geometry("560x620")
+    root.geometry("640x650")
     root.resizable(False, False)
-    root.configure(bg="#F7F7F7")
+    root.configure(bg=color["bg"])
 
-    tk.Label(root, text="Configurações do ditado", font=("Segoe UI", 13, "bold"), bg="#F7F7F7").pack(pady=(18, 12))
+    header = tk.Frame(root, bg=color["accent"], height=74)
+    header.pack(fill="x")
+    header.pack_propagate(False)
+    tk.Label(header, text="Winh Ditado", font=("Segoe UI Semibold", 16), bg=color["accent"], fg="#FFFFFF").place(x=22, y=14)
+    tk.Label(
+        header,
+        text="Ditado com Whisper local · Win+H",
+        font=("Segoe UI", 9),
+        bg=color["accent"],
+        fg="#FFE3E0",
+    ).place(x=24, y=44)
 
-    form = tk.Frame(root, bg="#F7F7F7")
-    form.pack(fill="x", padx=28)
+    body = tk.Frame(root, bg=color["bg"])
+    body.pack(fill="both", expand=True, padx=18, pady=14)
 
-    def row(label: str) -> tk.Widget:
-        holder = tk.Frame(form, bg="#F7F7F7")
-        holder.pack(fill="x", pady=6)
-        tk.Label(holder, text=label, width=16, anchor="w", bg="#F7F7F7", font=("Segoe UI", 9)).pack(side="left")
-        widget = ttk.Combobox(holder, state="readonly", width=42)
-        widget.pack(side="left", fill="x", expand=True)
-        return widget
+    card = tk.Frame(body, bg=color["card"], highlightthickness=1, highlightbackground=color["border"])
+    card.pack(fill="x")
 
-    device_box = row("Processamento")
-    model_box = row("Modelo")
-    compute_box = row("Precisão")
-    language_box = row("Idioma")
-    mic_box = row("Microfone")
-    insert_box = row("Inserir texto")
-    hotkey_entry = row("Atalho")
+    def add_row(parent, label: str, hint: str = "") -> ttk.Combobox:
+        line = tk.Frame(parent, bg=color["card"])
+        line.pack(fill="x", padx=16, pady=(10, 0))
+        tk.Label(
+            line, text=label, width=14, anchor="w", bg=color["card"], fg=color["fg"], font=("Segoe UI", 9)
+        ).pack(side="left")
+        box = ttk.Combobox(line, state="readonly", width=44, font=("Segoe UI", 9))
+        box.pack(side="left", fill="x", expand=True)
+        if hint:
+            tk.Label(
+                parent, text=hint, bg=color["card"], fg=color["muted"], font=("Segoe UI", 8), anchor="w"
+            ).pack(fill="x", padx=(140, 16), pady=(0, 2))
+        return box
 
-    device_values = [label for _, label in DEVICES]
-    device_box["values"] = device_values
-    device_box.set(dict(DEVICES).get(config.preset(cfg)["device"], device_values[1]))
+    preset = config.preset(cfg)
 
-    model_values = [label for _, label in MODELS]
-    model_box["values"] = model_values
-    current_model = config.preset(cfg)["model"]
-    model_box.set(next((label for name, label in MODELS if name == current_model), model_values[2]))
+    device_box = add_row(card, "Processamento")
+    device_box["values"] = [label for _, label in DEVICES]
+    device_box.set(dict(DEVICES).get(preset["device"], DEVICES[1][1]))
 
-    compute_values = [label for _, label in COMPUTE]
-    compute_box["values"] = compute_values
-    current_compute = config.preset(cfg)["compute_type"]
-    compute_box.set(next((label for name, label in COMPUTE if name == current_compute), compute_values[2]))
+    model_box = add_row(card, "Modelo", "Modelos maiores são mais precisos e mais lentos.")
+    model_box["values"] = [label for _, label in MODELS]
+    model_box.set(next((label for name, label in MODELS if name == preset["model"]), MODELS[2][1]))
 
-    languages = [("pt", "Português"), ("en", "Inglês"), ("es", "Espanhol"), ("auto", "Detectar")]
-    language_box["values"] = [label for _, label in languages]
-    language_box.set(dict(languages).get(cfg.get("language") or "pt", "Português"))
+    compute_box = add_row(card, "Precisão")
+    compute_box["values"] = [label for _, label in COMPUTE]
+    compute_box.set(next((label for name, label in COMPUTE if name == preset["compute_type"]), COMPUTE[2][1]))
+
+    language_box = add_row(card, "Idioma")
+    language_box["values"] = [label for _, label in LANGUAGES]
+    language_box.set(dict(LANGUAGES).get(cfg.get("language") or "pt", "Português"))
 
     microphones = ["Padrão do sistema"]
     try:
@@ -87,57 +127,106 @@ def open_settings(on_saved=None) -> None:
                 microphones.append(f"{index}: {device['name']}")
     except Exception:
         pass
+    mic_box = add_row(card, "Microfone")
     mic_box["values"] = microphones
     wanted = cfg.get("device")
-    mic_box.set(microphones[0] if wanted is None else next((m for m in microphones if m.startswith(f"{wanted}:")), microphones[0]))
+    mic_box.set(
+        microphones[0]
+        if wanted is None
+        else next((item for item in microphones if item.startswith(f"{wanted}:")), microphones[0])
+    )
 
+    insert_box = add_row(card, "Inserir texto")
     insert_box["values"] = ["Digitar (recomendado)", "Colar da área de transferência"]
     insert_box.set("Colar da área de transferência" if cfg.get("insert") == "paste" else "Digitar (recomendado)")
 
-    hotkey_entry.configure(state="normal")
-    hotkey_entry.insert(0, cfg.get("hotkey") or "win+h")
-    hotkey_entry.configure(state="readonly")
+    hotkey_box = add_row(card, "Atalho")
+    hotkey_box["values"] = [cfg.get("hotkey") or "win+h"]
+    hotkey_box.set(cfg.get("hotkey") or "win+h")
+
+    tk.Frame(card, bg=color["card"], height=10).pack(fill="x")
+
+    options_card = tk.Frame(body, bg=color["card"], highlightthickness=1, highlightbackground=color["border"])
+    options_card.pack(fill="x", pady=(12, 0))
+    tk.Label(
+        options_card, text="Comportamento", bg=color["card"], fg=color["muted"], font=("Segoe UI", 8), anchor="w"
+    ).pack(fill="x", padx=16, pady=(10, 0))
 
     beeps = tk.BooleanVar(value=bool(cfg.get("beeps", True)))
     indicator = tk.BooleanVar(value=bool(cfg.get("indicator", True)))
     streaming = tk.BooleanVar(value=bool(cfg.get("streaming", True)))
-
-    options = tk.Frame(root, bg="#F7F7F7")
-    options.pack(fill="x", padx=28, pady=(10, 0))
     for text, variable in (
         ("Som ao iniciar e terminar", beeps),
         ("Mostrar a pílula na tela", indicator),
         ("Texto aparecendo enquanto falo", streaming),
     ):
-        tk.Checkbutton(options, text=text, variable=variable, bg="#F7F7F7", anchor="w").pack(fill="x")
+        tk.Checkbutton(
+            options_card,
+            text=text,
+            variable=variable,
+            bg=color["card"],
+            fg=color["fg"],
+            activebackground=color["card"],
+            activeforeground=color["fg"],
+            selectcolor=color["card"],
+            anchor="w",
+            font=("Segoe UI", 9),
+            highlightthickness=0,
+        ).pack(fill="x", padx=12, pady=1)
 
-    status = tk.Label(root, text="", bg="#F7F7F7", fg="#1F4E79", font=("Segoe UI", 9))
+    status = tk.Label(body, text="", bg=color["bg"], fg=color["action"], font=("Segoe UI", 9))
     status.pack(pady=(10, 0))
+
+    buttons = tk.Frame(body, bg=color["bg"])
+    buttons.pack(pady=(6, 0))
 
     def save() -> None:
         device_name = dict((label, name) for name, label in DEVICES)[device_box.get()]
         model_name = dict((label, name) for name, label in MODELS)[model_box.get()]
         compute_name = dict((label, name) for name, label in COMPUTE)[compute_box.get()]
-        language_name = dict((label, name) for name, label in languages)[language_box.get()]
-
-        cfg["mode"] = "gpu" if device_name == "cuda" else "cpu"
-        cfg["model"] = model_name
-        cfg["compute_type"] = compute_name
-        cfg["language"] = language_name
-        cfg["insert"] = "paste" if insert_box.get().startswith("Colar") else "type"
-        cfg["beeps"] = bool(beeps.get())
-        cfg["indicator"] = bool(indicator.get())
-        cfg["streaming"] = bool(streaming.get())
-        mic = mic_box.get()
-        cfg["device"] = None if mic.startswith("Padrão") else int(mic.split(":")[0])
+        cfg.update(
+            {
+                "mode": "gpu" if device_name == "cuda" else "cpu",
+                "model": model_name,
+                "compute_type": compute_name,
+                "language": dict((label, name) for name, label in LANGUAGES)[language_box.get()],
+                "insert": "paste" if insert_box.get().startswith("Colar") else "type",
+                "beeps": bool(beeps.get()),
+                "indicator": bool(indicator.get()),
+                "streaming": bool(streaming.get()),
+                "device": None if mic_box.get().startswith("Padrão") else int(mic_box.get().split(":")[0]),
+            }
+        )
         config.save(cfg)
-        status.configure(text="Salvo. O ditado aplica em alguns segundos.")
+        status.configure(text="Salvo — aplica em alguns segundos.")
         if on_saved:
             on_saved(cfg)
 
-    buttons = tk.Frame(root, bg="#F7F7F7")
-    buttons.pack(pady=(14, 0))
-    tk.Button(buttons, text="Salvar", width=14, bg="#1F4E79", fg="white", relief="flat", command=save).pack(side="left", padx=6)
-    tk.Button(buttons, text="Fechar", width=14, relief="flat", command=root.destroy).pack(side="left", padx=6)
+    tk.Button(
+        buttons,
+        text="Salvar",
+        width=14,
+        bg=color["action"],
+        fg="white",
+        activebackground=color["action"],
+        activeforeground="white",
+        relief="flat",
+        bd=0,
+        font=("Segoe UI", 9, "bold"),
+        cursor="hand2",
+        command=save,
+    ).pack(side="left", padx=6)
+    tk.Button(
+        buttons,
+        text="Fechar",
+        width=14,
+        bg=color["card"],
+        fg=color["fg"],
+        relief="flat",
+        bd=0,
+        font=("Segoe UI", 9),
+        cursor="hand2",
+        command=root.destroy,
+    ).pack(side="left", padx=6)
 
     root.mainloop()
